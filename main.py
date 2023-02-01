@@ -101,18 +101,15 @@ decode(ai.think([1, 0, 1, 0, 1]), bpc)
 
 
 while True:
-    inp = input(fg(70, 70, 255) + "You: " + fg(150, 180, 255))
+    inp = input(f"{fg(70, 70, 255)}You: {fg(150, 180, 255)}")
     print(rs.all, end="")
     if inp.startswith("$train"):
         x = inp.split(" ")
-        if len(x) != 2 or x[1] == "":
-            x = 100
-        else:
-            x = int(x[1])
+        x = 100 if len(x) != 2 or x[1] == "" else int(x[1])
         train(min(x, 99999))
     else:
         print(
-            fg(255, 70, 70) + "AI:" + fg(255, 150, 150),
+            f"{fg(255, 70, 70)}AI:{fg(255, 150, 150)}",
             decode(ai.think(inp), bpc),
             rs.all,
         )
