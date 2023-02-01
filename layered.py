@@ -10,12 +10,11 @@ starting_weights = None
 def fill(l, length, null=0.5, reverse=False):
     if len(l) > length:
         return l[len(l) - length :]
-    else:
-        for x in range(length - len(l)):
-            if reverse:
-                l = [null] + l
-            else:
-                l.append(null)
+    for _ in range(length - len(l)):
+        if reverse:
+            l = [null] + l
+        else:
+            l.append(null)
     return l
 
 
@@ -60,8 +59,9 @@ class DeepLearningModel:
         self.max_output_length = max_output_length
         self.fill_value = fill_value
         self.bytes_per_character = bytes_per_character
-        for i in range(max_output_length):
-            self.layers.append(nn.NeuralNetwork(max_input_length))
+        self.layers.extend(
+            nn.NeuralNetwork(max_input_length) for _ in range(max_output_length)
+        )
 
     def train(self, inputs, outputs, times=2000):
         inputs = np.array(
@@ -87,7 +87,7 @@ class DeepLearningModel:
             np.array([[output[i] for output in outputs]]).T
             for i in range(self.max_output_length)
         ]
-        for iter in range(times):
+        for _ in range(times):
             for i in range(self.max_output_length):
                 self.layers[i].adjust(inputs, all_outputs[i])
 
@@ -112,13 +112,13 @@ class DeepLearningModel:
 
     def addLayers(self, n=1):
         self.max_output_length += n
-        for i in range(n):
+        for _ in range(n):
             self.layers = [nn.NeuralNetwork(self.max_input_length)] + self.layers
 
     def addInputs(self, n=1):
         self.max_input_length += n
         for layer in self.layers:
-            for i in range(n):
+            for _ in range(n):
                 layer.addInput()
 
     def setInOut(self, inputs, outputs):

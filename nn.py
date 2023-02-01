@@ -4,7 +4,7 @@ import pickle
 
 class NeuralNetwork:
     def __init__(self, dim=4, synaptic_weights=None):
-        if synaptic_weights == None:
+        if synaptic_weights is None:
             # seeding for random number generation
             np.random.seed(1)
 
@@ -37,19 +37,18 @@ class NeuralNetwork:
         training_inputs = np.array(training_inputs)
         training_outputs = np.array([training_outputs]).T
         # training the model to make accurate predictions while adjusting weights continually
-        for iteration in range(training_iterations):
+        for _ in range(training_iterations):
             self.adjust(training_inputs, training_outputs)
 
     def think(self, inputs):
         # passing the inputs via the neuron to get output
         # converting values to floats
         inputs = np.array(inputs).astype(float)
-        output = self.sigmoid(np.dot(inputs, self.synaptic_weights))
-        return output
+        return self.sigmoid(np.dot(inputs, self.synaptic_weights))
 
     def addInput(self, start=0):
-        if start == None:
-            start = sum([x[0] for x in self.synaptic_weights.tolist()]) / len(
+        if start is None:
+            start = sum(x[0] for x in self.synaptic_weights.tolist()) / len(
                 self.synaptic_weights
             )
         self.synaptic_weights = np.array([[start]] + self.synaptic_weights.tolist())
