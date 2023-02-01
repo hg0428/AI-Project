@@ -4,6 +4,10 @@ import pickle
 from layered import * 
 import atexit
 from sty import fg, rs
+from os import listdir
+from os.path import isfile, join
+import json
+
 
 
 # TODO: Publish as a lib.
@@ -20,95 +24,67 @@ ai = None
 mil = 20  # max input length use 30 for ai2
 mol = 20  # max output length
 bpc = 8  # bits per character use 32 for ai2
-models = [
-    "ai", 
-    "ai2"
-]  # 20, 20, 8  # 30, 30, 32
+
+models = [f for f in listdir('models') if isfile(join('models', f))]
+
 saveFile = "ai2"  # ai2 uses input/output length 30, and 32 bpc
-while True:
-    model = input("Which model should be loaded? ")
-    if model in models:
-        saveFile = model
-        break
-    else:
-        print(f'Avialiable models: {", ".join(models)}')
 
 
 def save():
     print("Saved!")
-    pickle.dump(ai, open(saveFile, "wb"))
+    pickle.dump(ai, open(join('models', saveFile), "wb"))
 
 
-try:
-    ai = pickle.load(open(saveFile, "rb"))
-    mil = ai.max_input_length
-    mol = ai.max_input_length
-    bpc = ai.bytes_per_character
-    print(f"Loaded {saveFile}.")
-except:
-    print("Error loading save file, creating new model...")
-    ai = DeepLearningModel(mil * bpc, mol * bpc, 0, save, bpc)
+def loadTrainingData(x):
+    with open(f'training_data/{x}.json') as f:
+        data = json.load(f)
+    return list(data.keys()), list(data.values())
 
+    
+while True:
+    print(f'Avialiable models: {", ".join(models)}')
+    saveFile = input("Which model should be loaded? ")
+    if saveFile in models:
+        try:
+            ai = pickle.load(open(join('models', saveFile), "rb"))
+            mil = ai.max_input_length
+            mol = ai.max_input_length
+            bpc = ai.bytes_per_character
+            print(f"Loaded {saveFile}.")
+            break
+        except:
+            print("Error loading save file.")
+    else:
+        x = input('Would you like to create a new model? ').lower()
+        if x.startswith('y'):
+            try: mil = int(input('Max input length? '))
+            except: continue
+            try: mol = int(input('Max output length? '))
+            except: continue
+            try: bpc = int(input('Bits per character? '))
+            except: continue
+            print('DLM or DLM Advanced (BETA)?\nDLM Advanced it an experimental Deep Learning structure designed for advanced AI autocomplete.')
+            t = input('Enter DLM, DLMA or cancel: ').lower()
+            if t == 'dlm':
+                ai = DeepLearningModel(mil * bpc, mol * bpc, 0, save, bpc)
+            elif t == 'dlma':
+                ai = DeepLearningModelAdvanced(mil * bpc, mol * bpc, 0, save, bpc)
+            else: continue
+            print('Model created.')
+            save()
+            break
+    
 # ai.setInOut(mil * bpc, mol * bpc)
-# Sets the AI to have 64 inputs and 64 outputs
 
 # ai.bytes_per_character = bpc
 
 
-def train(amt=100):
+def train(amt=100, file="basic"):
     if amt <= 0:
         return
-    print(f"Training with {amt} iterations...")
+    print(f"Training with {amt} iterations on \"{file}\" dataset...")
     try:
-        ai.train(
-            [
-                "hello ",
-                "Hello ",
-                "hello",
-                "Hello",
-                "Hello!",
-                "Who are you?",
-                "hi",
-                "dumb",
-                "my name is",
-                "no",
-                "שלום" if bpc >= 16 else "peace",
-                'what',
-                'WHAT?',
-                ' ',
-                'And you are?',
-                'AND YOU ARE?',
-                'Who made you?',
-                'HELlO!',
-                'Have we met?',
-                'WHat Did i just sAy?',
-                'What did I just say?',
-            ],
-            [
-                "world",
-                "World",
-                " world",
-                " World",
-                "Hi!",
-                "An AI!",
-                "hey",
-                "I dumb",
-                "idc",
-                "why",
-                "שלום" if bpc >= 16 else "peace",
-                'What what?',
-                'What what why?',
-                'Why are you silent?',
-                'An AI.',
-                'An ai.',
-                'Idk.',
-                'Hi!',
-                "I don't have memory, so idk.",
-                "idk, I don't have a memory.",
-                "idk, I don't have a memory.",
-            ],
-            amt,
-        )
+        ai.train(*loadTrainingData(file), amt)
         print("Training Complete")
     finally:
         save()
@@ -124,12 +100,16 @@ while True:
     inp = input(fg(70, 70, 255) + "You: " + fg(150, 180, 255))
     print(rs.all, end="")
     if inp.startswith("$train"):
-        x = inp.split(" ")
-        if len(x) != 2 or x[1] == "":
-            x = 100
+        x = inp.split(" ")[1:]
+        if len(x) < 1 or x[0] == "":
+            amt = 100
         else:
-            x = int(x[1])
-        train(min(x, 99999))
+            amt = int(x[0])
+        if len(x) < 2 or x[1] == "":
+            f = 'basic'
+        else:
+            f = x[1]
+        train(amt, f)
     else:
         print(
             fg(255, 70, 70) + "AI:" + fg(255, 150, 150),

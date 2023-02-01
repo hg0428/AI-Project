@@ -1,5 +1,6 @@
 import nn
 import numpy as np
+import sys
 
 
 input_length = 5
@@ -9,7 +10,10 @@ starting_weights = None
 
 def fill(l, length, null=0.5, reverse=False):
     if len(l) > length:
-        return l[len(l) - length :]
+        if reverse:
+            return l[len(l) - length :]
+        else:
+            return l[:length]
     else:
         for x in range(length - len(l)):
             if reverse:
@@ -19,7 +23,7 @@ def fill(l, length, null=0.5, reverse=False):
     return l
 
 
-# print(fill("hello", 3))
+#print(fill("hello", 3))
 
 
 def process_value(x, bpc=8):
@@ -44,7 +48,13 @@ def decode(data, bpc=8):
             string += chr(0)
     return string
 
+def addValue(inputs, values):
+    inputs = inputs.tolist()
+    for i in range(len(inputs)):
+        inputs[i].append(values[i])
+    return np.array(inputs)
 
+    
 class DeepLearningModel:
     def __init__(
         self,
@@ -113,7 +123,7 @@ class DeepLearningModel:
     def addLayers(self, n=1):
         self.max_output_length += n
         for i in range(n):
-            self.layers = [nn.NeuralNetwork(self.max_input_length)] + self.layers
+            self.layers.append(nn.NeuralNetwork(self.max_input_length))
 
     def addInputs(self, n=1):
         self.max_input_length += n
@@ -137,4 +147,96 @@ class DeepLearningModel:
         self.max_output_length = outputs
 
 
-# print(process_value('Hello World!'), decode(process_value('Hello World!')))
+class DeepLearningModelAdvanced:
+    def __init__(
+        self,
+        max_input_length,
+        max_output_length,
+        fill_value=0.5,
+        savefunct=None,
+        bytes_per_character=8,
+    ):
+        self.layers = []
+        self.savefunct = savefunct
+        self.max_input_length = max_input_length
+        self.max_output_length = 0
+        self.fill_value = fill_value
+        self.bytes_per_character = bytes_per_character
+        self.addLayers(max_output_length)
+        
+
+    def train(self, inputs, outputs, times=2000):
+        inputs = np.array(
+            [
+                fill(
+                    process_value(input, self.bytes_per_character),
+                    self.max_input_length,
+                    self.fill_value,
+                    reverse=True,
+                )
+                for input in inputs
+            ]
+        )
+        outputs = [
+            fill(
+                process_value(output, self.bytes_per_character),
+                self.max_output_length,
+                self.fill_value,
+            )
+            for output in outputs
+        ]
+        all_outputs = [
+            np.array([[output[i] for output in outputs]]).T
+            for i in range(self.max_output_length)
+        ]
+        for iter in range(times):
+            section = inputs
+            for i in range(self.max_output_length):
+                self.layers[i].adjust(section, all_outputs[i])
+                section = addValue(section, [output[i] for output in outputs])
+
+    def __del__(self):
+        if self.savefunct:
+            self.savefunct()
+
+    def think(self, input):
+        outputs = []
+        input = fill(
+            process_value(input, self.bytes_per_character),
+            self.max_input_length,
+            self.fill_value,
+            reverse=True,
+        )
+        for i in range(self.max_output_length):
+            x = self.layers[i].think(input).tolist()
+            if type(x) == list:
+                x = x[0]
+            input.append(x)
+            outputs.append(x)
+        return outputs
+
+    def addLayers(self, n=1):
+        self.max_output_length += n
+        for i in range(n):
+            self.layers.append(nn.NeuralNetwork(self.max_input_length + len(self.layers)))
+
+    def addInputs(self, n=1):
+        self.max_input_length += n
+        for layer in self.layers:
+            for i in range(n):
+                layer.addInput()
+
+    def setInOut(self, inputs, outputs):
+        if inputs > self.max_input_length:
+            self.addInputs(inputs - self.max_input_length)
+        elif inputs < self.max_input_length:
+            for i in self.layers:
+                i.synaptic_weights = i.synaptic_weights[
+                    len(i.synaptic_weights) - inputs :
+                ]
+        if outputs > self.max_output_length:
+            self.addLayers(inputs - self.max_output_length)
+        elif outputs < self.max_output_length:
+            self.layers = self.layers[:outputs]
+        self.max_input_length = inputs
+        self.max_output_length = outputs

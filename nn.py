@@ -32,6 +32,7 @@ class NeuralNetwork:
         adjustments = np.dot(training_inputs.T, error * self.sigmoid_derivative(output))
 
         self.synaptic_weights += adjustments
+        return output
 
     def train(self, training_inputs, training_outputs, training_iterations):
         training_inputs = np.array(training_inputs)
