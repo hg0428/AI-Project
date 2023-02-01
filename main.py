@@ -1,7 +1,7 @@
 from nn import *
 import numpy as np
 import pickle
-from layered import *
+from layered import * 
 import atexit
 from sty import fg, rs
 
