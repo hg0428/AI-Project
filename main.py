@@ -1,6 +1,5 @@
-from nn import NeuralNetwork
+from nn import NeuralNetwork, decode
 from pickle import dump, load as pload
-from layered import DeepLearningModel, DeepLearningModelAdvanced, decode
 from atexit import register
 from sty import fg, rs
 from os import listdir
@@ -45,10 +44,11 @@ while True:
     if saveFile in models:
         try:
             ai = pload(open(join("models", saveFile), "rb"))
-            bpc = ai.bytes_per_character
-            mil = int(ai.max_input_length / bpc)
-            mol = int(ai.max_input_length / bpc)
-            t = "DLMA" if type(ai) == DeepLearningModelAdvanced else "DLM"
+            bpc = ai.bits_per_character
+            mil = int(ai.input_length / bpc)
+            mol = int(ai.input_length / bpc)
+            t = "NN"
+            ai.type = "NN"
             print(f'Loaded {t} "{saveFile}" {mil}:{mol}@{bpc} = {(mol*bpc)*(mil*bpc)}')
             break
         except Exception as e:
@@ -76,15 +76,9 @@ while True:
                 bpc = int(input("Bits per character? "))
             except:
                 continue
-            print(
-                "\nDLM is a simple system composed of a NN for each output bit.\nDLM Advanced (BETA) is a variation of DLM where each NN receives the output of the preceding NN as input. BETA\n"
-            )
-            t = input("Enter DLM, DLMA or cancel: ").lower()
-            if t == "dlm":
-                ai = DeepLearningModel(mil * bpc, mol * bpc, 0, save, bpc)
-            elif t == "dlma":
-                ai = DeepLearningModelAdvanced(mil * bpc, mol * bpc, 0, save, bpc)
-            elif t == "nn":
+            print("\nNN is a basic Neural Network.")
+            t = input("Enter nn or cancel: ").lower()
+            if t == "nn":
                 ai = NeuralNetwork(mil * bpc, mol * bpc, bpc)
             else:
                 continue
@@ -94,7 +88,7 @@ while True:
 
 # ai.setInOut(mil * bpc, mol * bpc)
 
-# ai.bytes_per_character = bpc
+# ai.bits_per_character = bpc
 
 
 def train(amt=100, file="basic"):
