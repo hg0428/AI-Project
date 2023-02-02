@@ -89,7 +89,6 @@ while True:
 
 # ai.bytes_per_character = bpc
 
-
 def train(amt=100, file="basic"):
     if amt <= 0:
         return

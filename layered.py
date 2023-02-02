@@ -130,7 +130,7 @@ class DeepLearningModel:
     def __del__(self):
         if self.savefunct:
             self.savefunct()
-
+            
     def think(self, input):
         outputs = []
         input = fill(
@@ -189,6 +189,7 @@ class DeepLearningModel:
 
 
 class DeepLearningModelAdvanced(DeepLearningModel):
+
     def train(self, inputs, outputs, times=2000):
         inputs = np.array(
             [
