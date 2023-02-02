@@ -1,13 +1,12 @@
 from nn import *
 import numpy as np
 import pickle
-from layered import * 
+from layered import *
 import atexit
 from sty import fg, rs
 from os import listdir
 from os.path import isfile, join
 import json
-
 
 
 # TODO: Publish as a lib.
@@ -25,55 +24,64 @@ mil = 20  # max input length use 30 for ai2
 mol = 20  # max output length
 bpc = 8  # bits per character use 32 for ai2
 
-models = [f for f in listdir('models') if isfile(join('models', f))]
+models = [f for f in listdir("models") if isfile(join("models", f))]
 
 saveFile = "ai2"  # ai2 uses input/output length 30, and 32 bpc
 
 
 def save():
     print("Saved!")
-    pickle.dump(ai, open(join('models', saveFile), "wb"))
+    pickle.dump(ai, open(join("models", saveFile), "wb"))
 
 
 def loadTrainingData(x):
-    with open(f'training_data/{x}.json') as f:
+    with open(f"training_data/{x}.json") as f:
         data = json.load(f)
     return list(data.keys()), list(data.values())
 
-    
+
 while True:
     print(f'Avialiable models: {", ".join(models)}')
     saveFile = input("Which model should be loaded? ")
     if saveFile in models:
         try:
-            ai = pickle.load(open(join('models', saveFile), "rb"))
+            ai = pickle.load(open(join("models", saveFile), "rb"))
             mil = ai.max_input_length
             mol = ai.max_input_length
             bpc = ai.bytes_per_character
-            print(f"Loaded {saveFile}.")
+            print(f'Loaded "{saveFile}" {mil}:{mol}@{bpc}')
             break
         except:
             print("Error loading save file.")
     else:
-        x = input('Would you like to create a new model? ').lower()
-        if x.startswith('y'):
-            try: mil = int(input('Max input length? '))
-            except: continue
-            try: mol = int(input('Max output length? '))
-            except: continue
-            try: bpc = int(input('Bits per character? '))
-            except: continue
-            print('DLM or DLM Advanced (BETA)?\nDLM Advanced it an experimental Deep Learning structure designed for advanced AI autocomplete.')
-            t = input('Enter DLM, DLMA or cancel: ').lower()
-            if t == 'dlm':
+        x = input("Would you like to create a new model? ").lower()
+        if x.startswith("y"):
+            try:
+                mil = int(input("Max input length? "))
+            except:
+                continue
+            try:
+                mol = int(input("Max output length? "))
+            except:
+                continue
+            try:
+                bpc = int(input("Bits per character? "))
+            except:
+                continue
+            print(
+                "\nDLM is a simple system composed of a NN for each output bit.\nDLM Advanced is a variation of DLM where each NN receives the output of the preceding NN as input.\n"
+            )
+            t = input("Enter DLM, DLMA or cancel: ").lower()
+            if t == "dlm":
                 ai = DeepLearningModel(mil * bpc, mol * bpc, 0, save, bpc)
-            elif t == 'dlma':
+            elif t == "dlma":
                 ai = DeepLearningModelAdvanced(mil * bpc, mol * bpc, 0, save, bpc)
-            else: continue
-            print('Model created.')
+            else:
+                continue
+            print("Model created.")
             save()
             break
-    
+
 # ai.setInOut(mil * bpc, mol * bpc)
 
 # ai.bytes_per_character = bpc
@@ -82,7 +90,7 @@ while True:
 def train(amt=100, file="basic"):
     if amt <= 0:
         return
-    print(f"Training with {amt} iterations on \"{file}\" dataset...")
+    print(f'Training with {amt} iterations on "{file}" dataset...')
     try:
         ai.train(*loadTrainingData(file), amt)
         print("Training Complete")
@@ -106,7 +114,7 @@ while True:
         else:
             amt = int(x[0])
         if len(x) < 2 or x[1] == "":
-            f = 'basic'
+            f = "basic"
         else:
             f = x[1]
         train(amt, f)
