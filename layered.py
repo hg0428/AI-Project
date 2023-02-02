@@ -7,7 +7,7 @@ from random import sample
 
 input_length = 5
 starting_weights = None
-# neural_network = nn.NeuralNetwork(input_length, starting_weights)
+# neural_network = NeuralNetwork(input_length, starting_weights)
 
 
 def fill(l, length, null=0.5, reverse=False):
@@ -148,7 +148,7 @@ class DeepLearningModel:
     def addLayers(self, n=1):
         self.max_output_length += n
         for i in range(n):
-            self.layers.append(nn.NeuralNetwork(self.max_input_length))
+            self.layers.append(NeuralNetwork(self.max_input_length))
 
     def addInputs(self, n=1):
         self.max_input_length += n
@@ -239,7 +239,7 @@ class DeepLearningModelAdvanced(DeepLearningModel):
         self.max_output_length += n
         for i in range(n):
             self.layers.append(
-                nn.NeuralNetwork(self.max_input_length + len(self.layers))
+                NeuralNetwork(self.max_input_length + len(self.layers))
             )
 
     def setInOut(self, inputs, outputs):
