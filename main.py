@@ -14,8 +14,7 @@ import json
 # TODO: reset AI with improved training & longer character length.
 # TODO: cannot decrease setInOut values, training breaks with increase.
 # Maybe try out a more complex nn
-# Move to ipad.
-
+# Add confidence and fix DLMA.
 
 # Let nn's see the previous nn's output.
 
@@ -25,6 +24,7 @@ mol = 20  # max output length
 bpc = 8  # bits per character use 32 for ai2
 
 models = [f for f in listdir("models") if isfile(join("models", f))]
+
 
 saveFile = "ai2"  # ai2 uses input/output length 30, and 32 bpc
 
@@ -46,13 +46,16 @@ while True:
     if saveFile in models:
         try:
             ai = pickle.load(open(join("models", saveFile), "rb"))
-            mil = ai.max_input_length
-            mol = ai.max_input_length
             bpc = ai.bytes_per_character
-            print(f'Loaded "{saveFile}" {mil}:{mol}@{bpc}')
+            mil = int(ai.max_input_length / bpc)
+            mol = int(ai.max_input_length / bpc)
+            t = "DLMA" if type(ai) == DeepLearningModelAdvanced else "DLM"
+            print(f'Loaded {t} "{saveFile}" {mil}:{mol}@{bpc} = {(mol*bpc)*(mil*bpc)}')
             break
-        except:
-            print("Error loading save file.")
+        except Exception as e:
+            print("Error loading save file:", dir(e), e.__cause__, e.args, e.__traceback__, e)
+    
+            
     else:
         x = input("Would you like to create a new model? ").lower()
         if x.startswith("y"):

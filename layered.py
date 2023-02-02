@@ -45,10 +45,12 @@ def decode(data, bpc=8):
     chrs = [int(x, 2) for x in strbytes]
     string = ""
     for x in chrs:
+        if x == 0:
+            string += ''
         try:
             string += chr(x)
         except:
-            string += chr(0)
+            string += ''
     return string
 
 
@@ -85,7 +87,7 @@ class DeepLearningModel:
         self,
         max_input_length,
         max_output_length,
-        fill_value=0.5,
+        fill_value=0,
         savefunct=None,
         bytes_per_character=8,
     ):
