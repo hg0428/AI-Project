@@ -71,7 +71,7 @@ while True:
             except:
                 continue
             print(
-                "\nDLM is a simple system composed of a NN for each output bit.\nDLM Advanced is a variation of DLM where each NN receives the output of the preceding NN as input.\n"
+                "\nDLM is a simple system composed of a NN for each output bit.\nDLM Advanced (BETA) is a variation of DLM where each NN receives the output of the preceding NN as input. BETA\n"
             )
             t = input("Enter DLM, DLMA or cancel: ").lower()
             if t == "dlm":
@@ -103,7 +103,11 @@ register(save)
 
 # train()
 decode(ai.think([1, 0, 1, 0, 1]), bpc)
-
+# ai.train(
+#     [[1, 1, 1, 1]],
+#     [[0, 0, 0, 0]],
+#     2
+# )
 
 while True:
     inp = input(fg(70, 70, 255) + "You: " + fg(150, 180, 255))

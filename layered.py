@@ -10,7 +10,7 @@ starting_weights = None
 # neural_network = NeuralNetwork(input_length, starting_weights)
 
 
-def fill(l, length, null=0.5, reverse=False):
+def fill(l, length, null=0, reverse=False):
     if len(l) > length:
         if reverse:
             return l[len(l) - length :]
@@ -21,11 +21,12 @@ def fill(l, length, null=0.5, reverse=False):
             if reverse:
                 l = [null] + l
             else:
-                l.append(null)
+                if isinstance(l, str): l += str(null)
+                else: l.append(null)
     return l
 
 
-# print(fill("hello", 3))
+# sprint(fill("hello", 6))
 
 
 def process_value(x, bpc=8):
@@ -219,19 +220,19 @@ class DeepLearningModelAdvanced(DeepLearningModel):
                 self.layers[i].adjust(section, all_outputs[i])
                 section = addValue(section, [output[i] for output in outputs])
 
-    def think(self, input):
+    def think(self, inputs):
         outputs = []
-        input = fill(
-            process_value(input, self.bytes_per_character),
+        inputs = fill(
+            process_value(inputs, self.bytes_per_character),
             self.max_input_length,
             self.fill_value,
             reverse=True,
         )
         for i in range(self.max_output_length):
-            x = self.layers[i].think(input).tolist()
+            x = self.layers[i].think(inputs).tolist()
             if type(x) == list:
                 x = x[0]
-            input.append(x)
+            inputs.append(round(x))
             outputs.append(x)
         return outputs
 
