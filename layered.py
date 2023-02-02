@@ -21,8 +21,10 @@ def fill(l, length, null=0, reverse=False):
             if reverse:
                 l = [null] + l
             else:
-                if isinstance(l, str): l += str(null)
-                else: l.append(null)
+                if isinstance(l, str):
+                    l += str(null)
+                else:
+                    l.append(null)
     return l
 
 
@@ -46,11 +48,11 @@ def decode(data, bpc=8):
     string = ""
     for x in chrs:
         if x == 0:
-            string += ''
+            string += ""
         try:
             string += chr(x)
         except:
-            string += ''
+            string += ""
     return string
 
 
@@ -59,6 +61,7 @@ def addValue(inputs, values):
     for i in range(len(inputs)):
         inputs[i].append(values[i])
     return array(inputs)
+
 
 def variate(input, output):
     input = list(input.lower())
@@ -69,19 +72,24 @@ def variate(input, output):
         for i in range(len(input)):
             if n[i] == 1:
                 input[i] = input[i].upper()
-                inputs.append(''.join(input))
-                inputs.append(''.join(input).translate(str.maketrans('', '', punctuation)))
+                inputs.append("".join(input))
+                inputs.append(
+                    "".join(input).translate(str.maketrans("", "", punctuation))
+                )
                 input[i] = input[i].lower()
-                
+
     for n in product([0, 1], repeat=len(output)):
         for i in range(len(output)):
             if n[i] == 1:
                 output[i] = output[i].upper()
-                outputs.append(''.join(output))
-                outputs.append(''.join(output).translate(str.maketrans('', '', punctuation)))
+                outputs.append("".join(output))
+                outputs.append(
+                    "".join(output).translate(str.maketrans("", "", punctuation))
+                )
                 output[i] = output[i].lower()
     return inputs, outputs
-                
+
+
 class DeepLearningModel:
     def __init__(
         self,
@@ -94,7 +102,7 @@ class DeepLearningModel:
         self.layers = []
         self.savefunct = savefunct
         self.max_input_length = max_input_length
-        self.max_output_length = 0 # Gets incremented by self.addLayers
+        self.max_output_length = 0  # Gets incremented by self.addLayers
         self.fill_value = fill_value
         self.bytes_per_character = bytes_per_character
         self.addLayers(max_output_length)
@@ -130,7 +138,7 @@ class DeepLearningModel:
     def __del__(self):
         if self.savefunct:
             self.savefunct()
-            
+
     def think(self, input):
         outputs = []
         input = fill(
@@ -171,7 +179,7 @@ class DeepLearningModel:
             self.layers = self.layers[:outputs]
         self.max_input_length = inputs
         self.max_output_length = outputs
-        
+
     def abstractTrain(self, data, variator=variate, amt=10):
         inputs = []
         outputs = []
@@ -183,13 +191,11 @@ class DeepLearningModel:
             self.train(
                 sample(inputs, min(100, len(inputs))),
                 sample(outputs, min(100, len(outputs))),
-                100
+                100,
             )
-        
 
 
 class DeepLearningModelAdvanced(DeepLearningModel):
-
     def train(self, inputs, outputs, times=2000):
         inputs = array(
             [
@@ -239,9 +245,7 @@ class DeepLearningModelAdvanced(DeepLearningModel):
     def addLayers(self, n=1):
         self.max_output_length += n
         for i in range(n):
-            self.layers.append(
-                NeuralNetwork(self.max_input_length + len(self.layers))
-            )
+            self.layers.append(NeuralNetwork(self.max_input_length + len(self.layers)))
 
     def setInOut(self, inputs, outputs):
         if inputs > self.max_input_length:
@@ -259,5 +263,91 @@ class DeepLearningModelAdvanced(DeepLearningModel):
         self.max_output_length = outputs
 
 
-class DeepLearningModelNetwork(DeepLearningModel):
-    pass
+class DeepLearningModelNew:
+    def __init__(
+        self,
+        max_input_length,
+        max_output_length,
+        fill_value=0,
+        savefunct=None,
+        bytes_per_character=8,
+    ):
+        self.savefunct = savefunct
+        self.max_input_length = max_input_length
+        self.max_output_length = 0  # Gets incremented by self.addLayers
+        self.fill_value = fill_value
+        self.bytes_per_character = bytes_per_character
+        self.addLayers(max_output_length)
+
+    def train(self, inputs, outputs, times=2000):
+        inputs = array(
+            [
+                fill(
+                    process_value(input, self.bytes_per_character),
+                    self.max_input_length,
+                    self.fill_value,
+                    reverse=True,
+                )
+                for input in inputs
+            ]
+        )
+        outputs = [
+            fill(
+                process_value(output, self.bytes_per_character),
+                self.max_output_length,
+                self.fill_value,
+            )
+            for output in outputs
+        ]
+        all_outputs = [
+            array([[output[i] for output in outputs]]).T
+            for i in range(self.max_output_length)
+        ]
+        for iter in range(times):
+            for i in range(self.max_output_length):
+                self.layers[i].adjust(inputs, all_outputs[i])
+
+    def __del__(self):
+        if self.savefunct:
+            self.savefunct()
+
+    def think(self, input):
+        outputs = []
+        input = fill(
+            process_value(input, self.bytes_per_character),
+            self.max_input_length,
+            self.fill_value,
+            reverse=True,
+        )
+        for i in range(self.max_output_length):
+            x = self.layers[i].think(input).tolist()
+            if type(x) == list:
+                x = x[0]
+            outputs.append(x)
+        return outputs
+
+    def addLayers(self, n=1):
+        self.max_output_length += n
+        for i in range(n):
+            self.layers.append(NeuralNetwork(self.max_input_length))
+
+    def addInputs(self, n=1):
+        self.max_input_length += n
+        for layer in self.layers:
+            for i in range(n):
+                layer.addInput()
+
+    def setInOut(self, inputs, outputs):
+        if inputs > self.max_input_length:
+            self.addInputs(inputs - self.max_input_length)
+        elif inputs < self.max_input_length:
+            for i in self.layers:
+                i.synaptic_weights = i.synaptic_weights[
+                    len(i.synaptic_weights) - inputs :
+                ]
+        if outputs > self.max_output_length:
+            self.addLayers(inputs - self.max_output_length)
+        elif outputs < self.max_output_length:
+            self.layers = self.layers[:outputs]
+        self.max_input_length = inputs
+        self.max_output_length = outputs

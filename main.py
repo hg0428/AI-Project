@@ -52,9 +52,15 @@ while True:
             print(f'Loaded {t} "{saveFile}" {mil}:{mol}@{bpc} = {(mol*bpc)*(mil*bpc)}')
             break
         except Exception as e:
-            print("Error loading save file:", dir(e), e.__cause__, e.args, e.__traceback__, e)
-    
-            
+            print(
+                "Error loading save file:",
+                dir(e),
+                e.__cause__,
+                e.args,
+                e.__traceback__,
+                e,
+            )
+
     else:
         x = input("Would you like to create a new model? ").lower()
         if x.startswith("y"):
@@ -78,6 +84,8 @@ while True:
                 ai = DeepLearningModel(mil * bpc, mol * bpc, 0, save, bpc)
             elif t == "dlma":
                 ai = DeepLearningModelAdvanced(mil * bpc, mol * bpc, 0, save, bpc)
+            elif t == "nn":
+                ai = NeuralNetwork(mil * bpc, mol * bpc, bpc)
             else:
                 continue
             print("Model created.")
@@ -87,6 +95,7 @@ while True:
 # ai.setInOut(mil * bpc, mol * bpc)
 
 # ai.bytes_per_character = bpc
+
 
 def train(amt=100, file="basic"):
     if amt <= 0:
