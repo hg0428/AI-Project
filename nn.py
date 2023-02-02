@@ -6,7 +6,7 @@ def sigmoid(x):
         # applying the sigmoid function
         return 1 / (1 + exp(-x))
 
-def sigmoid_derivative(self, x):
+def sigmoid_derivative(x):
         # computing derivative to the Sigmoid function
         return x * (1 - x)
         
