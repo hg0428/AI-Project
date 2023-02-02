@@ -36,7 +36,7 @@ class NeuralNetwork:
 
     def train(self, training_inputs, training_outputs, training_iterations):
         training_inputs = array(training_inputs)
-        training_outputs = array([training_outputs]).T
+        training_outputs = array(training_outputs).T
         # training the model to make accurate predictions while adjusting weights continually
         for iteration in range(training_iterations):
             self.adjust(training_inputs, training_outputs)
@@ -54,3 +54,11 @@ class NeuralNetwork:
                 self.synaptic_weights
             )
         self.synaptic_weights = array([[start]] + self.synaptic_weights.tolist())
+
+
+if __name__ == "__main__":
+    x = NeuralNetwork(3)
+    x.synaptic_weights = array([[1], [1], [1]] + x.synaptic_weights.tolist())
+    x.synaptic_weights = x.synaptic_weights.reshape((3, 2))
+    x.train([[1, 1, 1], [0, 0, 0]], [[1, 1], [0, 0]], 3)
+    print(x.think([1, 1, 1]))
