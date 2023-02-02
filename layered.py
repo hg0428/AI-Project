@@ -1,9 +1,8 @@
-import nn
-import numpy as np
-import sys
-import itertools
-import string
-import random
+from nn import NeuralNetwork
+from numpy import array
+from itertools import product
+from string import punctuation
+from random import sample
 
 
 input_length = 5
@@ -58,27 +57,27 @@ def addValue(inputs, values):
     inputs = inputs.tolist()
     for i in range(len(inputs)):
         inputs[i].append(values[i])
-    return np.array(inputs)
+    return array(inputs)
 
 def variate(input, output):
     input = list(input.lower())
     output = list(output.lower())
     inputs = []
     outputs = []
-    for n in itertools.product([0, 1], repeat=len(input)):
+    for n in product([0, 1], repeat=len(input)):
         for i in range(len(input)):
             if n[i] == 1:
                 input[i] = input[i].upper()
                 inputs.append(''.join(input))
-                inputs.append(''.join(input).translate(str.maketrans('', '', string.punctuation)))
+                inputs.append(''.join(input).translate(str.maketrans('', '', punctuation)))
                 input[i] = input[i].lower()
                 
-    for n in itertools.product([0, 1], repeat=len(output)):
+    for n in product([0, 1], repeat=len(output)):
         for i in range(len(output)):
             if n[i] == 1:
                 output[i] = output[i].upper()
                 outputs.append(''.join(output))
-                outputs.append(''.join(output).translate(str.maketrans('', '', string.punctuation)))
+                outputs.append(''.join(output).translate(str.maketrans('', '', punctuation)))
                 output[i] = output[i].lower()
     return inputs, outputs
                 
@@ -100,7 +99,7 @@ class DeepLearningModel:
         self.addLayers(max_output_length)
 
     def train(self, inputs, outputs, times=2000):
-        inputs = np.array(
+        inputs = array(
             [
                 fill(
                     process_value(input, self.bytes_per_character),
@@ -120,7 +119,7 @@ class DeepLearningModel:
             for output in outputs
         ]
         all_outputs = [
-            np.array([[output[i] for output in outputs]]).T
+            array([[output[i] for output in outputs]]).T
             for i in range(self.max_output_length)
         ]
         for iter in range(times):
@@ -181,8 +180,8 @@ class DeepLearningModel:
             outputs.append(o)
         for i in range(amt):
             self.train(
-                random.sample(inputs, min(100, len(inputs))),
-                random.sample(outputs, min(100, len(outputs))),
+                sample(inputs, min(100, len(inputs))),
+                sample(outputs, min(100, len(outputs))),
                 100
             )
         
@@ -191,7 +190,7 @@ class DeepLearningModel:
 class DeepLearningModelAdvanced(DeepLearningModel):
 
     def train(self, inputs, outputs, times=2000):
-        inputs = np.array(
+        inputs = array(
             [
                 fill(
                     process_value(input, self.bytes_per_character),
@@ -211,7 +210,7 @@ class DeepLearningModelAdvanced(DeepLearningModel):
             for output in outputs
         ]
         all_outputs = [
-            np.array([[output[i] for output in outputs]]).T
+            array([[output[i] for output in outputs]]).T
             for i in range(self.max_output_length)
         ]
         for iter in range(times):

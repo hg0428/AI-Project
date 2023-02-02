@@ -1,25 +1,25 @@
-import numpy as np
+from numpy import random, array, exp, dot
 import pickle
 
 
+def sigmoid(x):
+        # applying the sigmoid function
+        return 1 / (1 + exp(-x))
+
+def sigmoid_derivative(self, x):
+        # computing derivative to the Sigmoid function
+        return x * (1 - x)
+        
 class NeuralNetwork:
     def __init__(self, dim=4, synaptic_weights=None):
         if synaptic_weights == None:
             # seeding for random number generation
-            np.random.seed(1)
+            random.seed(1)
 
             # converting weights to a 3 by 1 matrix with values from -1 to 1 and mean of 0
-            self.synaptic_weights = 2 * np.random.random((dim, 1)) - 1
+            self.synaptic_weights = 2 * random.random((dim, 1)) - 1
         else:
-            self.synaptic_weights = np.array(synaptic_weights)
-
-    def sigmoid(self, x):
-        # applying the sigmoid function
-        return 1 / (1 + np.exp(-x))
-
-    def sigmoid_derivative(self, x):
-        # computing derivative to the Sigmoid function
-        return x * (1 - x)
+            self.synaptic_weights = array(synaptic_weights)
 
     def adjust(self, training_inputs, training_outputs):
         # siphon the training data via  the neuron
@@ -29,14 +29,14 @@ class NeuralNetwork:
         error = training_outputs - output
 
         # performing weight adjustments
-        adjustments = np.dot(training_inputs.T, error * self.sigmoid_derivative(output))
+        adjustments = dot(training_inputs.T, error * sigmoid_derivative(output))
 
         self.synaptic_weights += adjustments
         return output
 
     def train(self, training_inputs, training_outputs, training_iterations):
-        training_inputs = np.array(training_inputs)
-        training_outputs = np.array([training_outputs]).T
+        training_inputs = array(training_inputs)
+        training_outputs = array([training_outputs]).T
         # training the model to make accurate predictions while adjusting weights continually
         for iteration in range(training_iterations):
             self.adjust(training_inputs, training_outputs)
@@ -44,8 +44,8 @@ class NeuralNetwork:
     def think(self, inputs):
         # passing the inputs via the neuron to get output
         # converting values to floats
-        inputs = np.array(inputs).astype(float)
-        output = self.sigmoid(np.dot(inputs, self.synaptic_weights))
+        inputs = array(inputs).astype(float)
+        output = sigmoid(dot(inputs, self.synaptic_weights))
         return output
 
     def addInput(self, start=0):
@@ -53,4 +53,4 @@ class NeuralNetwork:
             start = sum([x[0] for x in self.synaptic_weights.tolist()]) / len(
                 self.synaptic_weights
             )
-        self.synaptic_weights = np.array([[start]] + self.synaptic_weights.tolist())
+        self.synaptic_weights = array([[start]] + self.synaptic_weights.tolist())

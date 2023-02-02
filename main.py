@@ -1,12 +1,11 @@
-from nn import *
-import numpy as np
-import pickle
-from layered import *
-import atexit
+from nn import NeuralNetwork
+from pickle import dump, load as pload
+from layered import DeepLearningModel, DeepLearningModelAdvanced, decode
+from atexit import register
 from sty import fg, rs
 from os import listdir
 from os.path import isfile, join
-import json
+from json import load
 
 
 # TODO: Publish as a lib.
@@ -31,12 +30,12 @@ saveFile = "ai2"  # ai2 uses input/output length 30, and 32 bpc
 
 def save():
     print("Saved!")
-    pickle.dump(ai, open(join("models", saveFile), "wb"))
+    dump(ai, open(join("models", saveFile), "wb"))
 
 
 def loadTrainingData(x):
     with open(f"training_data/{x}.json") as f:
-        data = json.load(f)
+        data = load(f)
     return list(data.keys()), list(data.values())
 
 
@@ -45,7 +44,7 @@ while True:
     saveFile = input("Which model should be loaded? ")
     if saveFile in models:
         try:
-            ai = pickle.load(open(join("models", saveFile), "rb"))
+            ai = pload(open(join("models", saveFile), "rb"))
             bpc = ai.bytes_per_character
             mil = int(ai.max_input_length / bpc)
             mol = int(ai.max_input_length / bpc)
@@ -100,7 +99,7 @@ def train(amt=100, file="basic"):
         save()
 
 
-atexit.register(save)
+register(save)
 
 # train()
 decode(ai.think([1, 0, 1, 0, 1]), bpc)
