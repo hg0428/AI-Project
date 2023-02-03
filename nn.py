@@ -47,6 +47,13 @@ def process_value(x, bits_per_character=8):
 
 
 def decode(data, bits_per_character=8):
+    confidence = 0
+    for i in data:
+        if i < 0.5: 
+            confidence += 1 - i
+        else:
+            confidence += i
+    confidence /= len(data)
     out = [round(x) for x in data]
     bytes = [
         out[x : x + bits_per_character] for x in range(0, len(out), bits_per_character)
@@ -61,7 +68,7 @@ def decode(data, bits_per_character=8):
             string += chr(x)
         except:
             string += ""
-    return string
+    return string, confidence
 
 
 class NeuralNetwork:
@@ -71,10 +78,12 @@ class NeuralNetwork:
         output_length=1,
         bits_per_character=8,
         synaptic_weights=None,
+        save_funct=None
     ):
         self.input_length = input_length
         self.output_length = output_length
         self.bits_per_character = bits_per_character
+        self.save_funct = save_funct
         if synaptic_weights == None:
             # seeding for random number generation
             random.seed(1)
@@ -83,7 +92,9 @@ class NeuralNetwork:
             self.synaptic_weights = 2 * random.random((input_length, output_length)) - 1
         else:
             self.synaptic_weights = array(synaptic_weights)
-
+    def __del__(self):
+        if self.save_funct:
+            self.save_funct()
     def adjust(self, training_inputs, training_outputs):
         # siphon the training data via  the neuron
         output = self.think(training_inputs)
@@ -114,7 +125,6 @@ class NeuralNetwork:
         for iteration in range(training_iterations):
             # siphon the training data via  the neuron
             output = self.think(training_inputs)
-
             # computing error rate for back-propagation
             error = training_outputs - output
 

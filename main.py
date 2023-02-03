@@ -49,7 +49,7 @@ while True:
             mol = int(ai.input_length / bpc)
             t = "NN"
             ai.type = "NN"
-            print(f'Loaded {t} "{saveFile}" {mil}:{mol}@{bpc} = {(mol*bpc)*(mil*bpc)}')
+            print(f'Loaded {t} "{saveFile}" {mil}:{mol}@{bpc} = {(mol*bpc)*(mil*bpc):,}')
             break
         except Exception as e:
             print(
@@ -94,9 +94,10 @@ while True:
 def train(amt=100, file="basic"):
     if amt <= 0:
         return
-    print(f'Training with {amt} iterations on "{file}" dataset...')
+    data = loadTrainingData(file)
+    print(f'Training with {amt} iterations on "{file}" dataset ({len(data[0])})...')
     try:
-        ai.train(*loadTrainingData(file), amt)
+        ai.train(*data, amt)
         print("Training Complete")
     finally:
         save()
@@ -113,7 +114,7 @@ decode(ai.think([1, 0, 1, 0, 1]), bpc)
 # )
 
 while True:
-    inp = input(fg(70, 70, 255) + "You: " + fg(150, 180, 255))
+    inp = input(fg(70, 70, 255) + "You: " + rs.all)
     print(rs.all, end="")
     if inp.startswith("$train"):
         x = inp.split(" ")[1:]
@@ -127,8 +128,5 @@ while True:
             f = x[1]
         train(amt, f)
     else:
-        print(
-            fg(255, 70, 70) + "AI:" + fg(255, 150, 150),
-            decode(ai.think(inp), bpc),
-            rs.all,
-        )
+        resp = decode(ai.think(inp), bpc)
+        print(f'{fg(255, 70, 70)}AI:{fg(255, 150, 150)} {resp[0]}\n{fg(255, 70, 70)}Confidence:{fg(255, 150, 150)} {resp[1]}%{rs.all}')
