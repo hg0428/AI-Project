@@ -77,9 +77,11 @@ class NeuralNetwork:
         input_length=4,
         output_length=1,
         bits_per_character=8,
+        layers = 1,
         synaptic_weights=None,
         save_funct=None
     ):
+        self.layers = layers
         self.input_length = input_length
         self.output_length = output_length
         self.bits_per_character = bits_per_character
@@ -89,7 +91,7 @@ class NeuralNetwork:
             random.seed(1)
 
             # converting weights to a 3 by 1 matrix with values from -1 to 1 and mean of 0
-            self.synaptic_weights = 2 * random.random((input_length, output_length)) - 1
+            self.synaptic_weights = [2 * random.random((input_length, output_length)) - 1] * layers
         else:
             self.synaptic_weights = array(synaptic_weights)
     def __del__(self):
@@ -103,9 +105,13 @@ class NeuralNetwork:
         error = training_outputs - output
 
         # performing weight adjustments
-        adjustments = dot(training_inputs.T, error * sigmoid_derivative(output))
-
-        self.synaptic_weights += adjustments
+        for i in range(len(self.synaptic_weights)):
+            x = output
+            for _ in range(len(self.synaptic_weights) - i):
+                x = sigmoid_derivative(output)
+            adjustments = dot(training_inputs.T, error * x)
+    
+            self.synaptic_weights[i] += adjustments
         return output
 
     def train(self, training_inputs, training_outputs, training_iterations):
@@ -125,13 +131,18 @@ class NeuralNetwork:
         for iteration in range(training_iterations):
             # siphon the training data via  the neuron
             output = self.think(training_inputs)
+    
             # computing error rate for back-propagation
             error = training_outputs - output
-
+    
             # performing weight adjustments
-            adjustments = dot(training_inputs.T, error * sigmoid_derivative(output))
-
-            self.synaptic_weights += adjustments
+            for i in range(len(self.synaptic_weights)):
+                x = output
+                for _ in range(len(self.synaptic_weights) - i):
+                    x = sigmoid_derivative(output)
+                adjustments = dot(training_inputs.T, error * x)
+        
+                self.synaptic_weights[i] += adjustments
 
     def think(self, inputs):
         # passing the inputs via the neuron to get output
@@ -140,7 +151,10 @@ class NeuralNetwork:
                 process_value(inputs, self.bits_per_character), self.input_length
             )
         inputs = array(inputs)
-        output = sigmoid(dot(inputs, self.synaptic_weights))
+        x = inputs
+        for i in range(len(self.synaptic_weights)):
+            x = sigmoid(dot(inputs, self.synaptic_weights[i]))
+        output = x
         return output
 
     def addInput(self, start=0):
@@ -148,9 +162,10 @@ class NeuralNetwork:
             start = sum([sum(x) for x in self.synaptic_weights.tolist()]) / len(
                 self.synaptic_weights
             )
-        self.synaptic_weights = array(
-            [[start] * self.output_length] + self.synaptic_weights.tolist()
-        )
+        for l in range(len(self.synaptic_weights)):
+            self.synaptic_weights[l] = array(
+                [[start] * self.output_length] + self.synaptic_weights[l].tolist()
+            )
         self.input_length += 1
 
     def addOutput(self, start=0):
@@ -158,8 +173,9 @@ class NeuralNetwork:
             start = sum([sum(x) for x in self.synaptic_weights.tolist()]) / len(
                 self.synaptic_weights
             )
-        for i in range(len(self.synaptic_weights)):
-            self.synaptic_weights[i] = array(self.synaptic_weights.tolist() + [start])
+        for l in range(len(self.synaptic_weights)):
+            for i in range(len(self.synaptic_weights)):
+                self.synaptic_weights[l][i] = array(self.synaptic_weights[l].tolist() + [start])
         self.output_length += 1
 
     def setInOut(self, inputs, outputs):
@@ -167,22 +183,24 @@ class NeuralNetwork:
             for i in range(inputs - self.input_length):
                 self.addInput()
         elif inputs < self.input_length:
-            self.synaptic_weights = self.synaptic_weights[1:]
+            for l in range(len(self.synaptic_weights)):
+                self.synaptic_weights[l] = self.synaptic_weights[l][1:]
         if outputs > self.max_output_length:
             for i in range(inputs - self.max_output_length):
                 self.addOutput()
         elif outputs < self.max_output_length:
-            for i in range(len(self.synaptic_weights)):
-                self.synaptic_weights[i] = array(self.synaptic_weights.tolist()[:-1])
+            for l in range(len(self.synaptic_weights)):
+                for i in range(len(self.synaptic_weights[l])):
+                    self.synaptic_weights[l][i] = array(self.synaptic_weights[l].tolist()[:-1])
         self.input_length = inputs
         self.output_length = outputs
 
 
 if __name__ == "__main__":
-    x = NeuralNetwork(32, 32)
+    x = NeuralNetwork(32, 32, 8, 2)
     x.train(
         [process_value("hi"), process_value("hey")],
         [process_value("hey"), process_value("hi")],
-        5,
+        20,
     )
     print(decode(x.think(process_value("hi"))))

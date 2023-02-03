@@ -20,6 +20,7 @@ ai = None
 mil = 20  # max input length use 30 for ai2
 mol = 20  # max output length
 bpc = 8  # bits per character use 32 for ai2
+layers = 1
 
 models = [f for f in listdir("models") if isfile(join("models", f))]
 
@@ -47,6 +48,13 @@ while True:
             bpc = ai.bits_per_character
             mil = int(ai.input_length / bpc)
             mol = int(ai.input_length / bpc)
+            if 'layers' in dir(ai):
+                layers = ai.layers  
+            else:
+                ai.layers = 1
+                ai.synaptic_weights = [ai.synaptic_weights]
+                layers = 1
+                save()
             t = "NN"
             ai.type = "NN"
             print(f'Loaded {t} "{saveFile}" {mil}:{mol}@{bpc} = {(mol*bpc)*(mil*bpc):,}')
@@ -74,6 +82,10 @@ while True:
                 continue
             try:
                 bpc = int(input("Bits per character? "))
+            except:
+                continue
+            try:
+                layers = int(input("Layers? "))
             except:
                 continue
             print("\nNN is a basic Neural Network.")
