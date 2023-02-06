@@ -48,16 +48,9 @@ while True:
             bpc = ai.bits_per_character
             mil = int(ai.input_length / bpc)
             mol = int(ai.input_length / bpc)
-            if 'layers' in dir(ai):
-                layers = ai.layers  
-            else:
-                ai.layers = 1
-                ai.synaptic_weights = [ai.synaptic_weights]
-                layers = 1
-                save()
-            t = "NN"
-            ai.type = "NN"
-            print(f'Loaded {t} "{saveFile}" {mil}:{mol}@{bpc} = {(mol*bpc)*(mil*bpc):,}')
+            layers = ai.layers
+            t = ai.type
+            print(f'Loaded {t} "{saveFile}" {layers}l - {mil}:{mol}@{bpc} = {((mol*bpc)*(mil*bpc))*layers:,}')
             break
         except Exception as e:
             print(
@@ -91,7 +84,7 @@ while True:
             print("\nNN is a basic Neural Network.")
             t = input("Enter nn or cancel: ").lower()
             if t == "nn":
-                ai = NeuralNetwork(mil * bpc, mol * bpc, bpc)
+                ai = NeuralNetwork(mil * bpc, mol * bpc, bpc, layers)
             else:
                 continue
             print("Model created.")
@@ -117,7 +110,6 @@ def train(amt=100, file="basic"):
 
 register(save)
 
-# train()
 decode(ai.think([1, 0, 1, 0, 1]), bpc)
 # ai.train(
 #     [[1, 1, 1, 1]],
