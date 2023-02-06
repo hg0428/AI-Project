@@ -1,141 +1,232 @@
-import numpy
-import random
-import json
+from numpy import random, array, exp, dot, ndarray
+import pickle
 
-# the sigmoid function
-def sigmoid(z):
-    return 1.0 / (1.0 + numpy.exp(-z))
 
-# the derivative of the sigmoid function
-def sigmoidPrime(z):
-    return sigmoid(z) * (1 - sigmoid(z))
+def sigmoid(x):
+    # applying the sigmoid function
+    return 1 / (1 + exp(-x))
 
-# sigmoid vectors
-sigmoidVector = numpy.vectorize(sigmoid)
-sigmoidPrimeVector = numpy.vectorize(sigmoidPrime)
 
-#A class that implements stochastic gradient descent learning algorithm for a feedforward neural network
-class NN:
-    def __init__(self, sizes):
-        self.numLayers = len(sizes)
-        self.sizes = sizes
+def sigmoid_derivative(x):
+    # computing derivative to the Sigmoid function
+    return x * (1 - x)
 
-        # the biases and weights for the network are initialized randomly, using a Guassian distribution with mean 0, and variance 1
-        self.biases = [numpy.random.randn(y, 1) for y in sizes[1:]]
-        self.weights = [numpy.random.randn(y, x) for x, y in zip(sizes[:-1], sizes[1:])]
-        print(self.biases, self.weights, self.numLayers)
 
-    # feedForward function - return the output of the network
-    def feedForward(self, inputs):
-        for b, w in zip(self.biases, self.weights):
-            inputs = sigmoidVector(numpy.dot(w, inputs) + b)
-        return inputs
-
-    # train function - train the neural network using mini-batch stochastic gradient descent
-    # the trainingData is a list of tuples "(x, y)" representing the training inputs and the desired outputs
-    # if testData is provided then the network will be evaluated against the test data after each epoch
-    def train(self, trainingData, epochs, miniBatchSize, eta, testData = None):
-        if testData:
-            nTest = len(testData)
-
-        n = len(testData)
-        for j in xrange(epochs):
-            random.shuffle(trainingData)
-
-            miniBatches = [trainingData[k:k + miniBatchSize] for k in xrange(0, n, miniBatchSize)]
-            for miniBatch in miniBatches:
-                self.updateMiniBatch(miniBatch, eta)
-
-            if testData:
-                print("Epoch %i: %i / %i" % (j, self.evaluate(testData), nTest))
+def fill(l, length, null=0, reverse=False):
+    if len(l) > length:
+        if reverse:
+            return l[len(l) - length :]
+        else:
+            return l[:length]
+    else:
+        for x in range(length - len(l)):
+            if reverse:
+                l = [null] + l
             else:
-                print("Epoch %i complete" % j)
+                if isinstance(l, str):
+                    l += str(null)
+                else:
+                    l.append(null)
+    return l
 
-                
-    # updateMiniBatch function - update the network's weights and biases by applying gradient descent using backpropagation
-    # to a single mini batch
-    # the miniBatch is a list of tuples "(x, y)" and eta is the learning rate
-    def updateMiniBatch(self, miniBatch, eta):
-        nabla_b = [numpy.zeros(b.shape) for b in self.biases]
-        nabla_w = [numpy.zeros(w.shape) for w in self.weights]
 
-        for x, y in miniBatch:
-            delta_nabla_b, delta_nabla_w = self.backPropagate(x, y)
+def process_value(x, bits_per_character=8):
+    if type(x) == str:
+        return [
+            int(i)
+            for i in "".join([format(ord(i), f"0{bits_per_character}b") for i in x])
+        ]
+    elif type(x) == int:
+        return [int(i) for i in format(x, "b")]
+    elif type(x) == list:
+        return x
+    elif type(x) == array:
+        return x
+    elif type(x) == ndarray:
+        return x
 
-            nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
-            nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
 
-        self.weights = [w - (eta / len(miniBatch)) * nw for w, nw in zip(self.weights, nabla_w)]
-        self.biases = [b - (eta / len(miniBatch)) * nb for b, nb in zip(self.biases, nabla_b)]
+def decode(data, bits_per_character=8):
+    confidence = 0
+    for i in data:
+        if i < 0.5: 
+            confidence += 1 - i
+        else:
+            confidence += i
+    confidence /= len(data)
+    out = [round(x) for x in data]
+    bytes = [
+        out[x : x + bits_per_character] for x in range(0, len(out), bits_per_character)
+    ]
+    strbytes = ["".join([str(i) for i in x]) for x in bytes]
+    chrs = [int(x, 2) for x in strbytes]
+    string = ""
+    for x in chrs:
+        if x == 0:
+            string += ""
+        try:
+            string += chr(x)
+        except:
+            string += ""
+    return string, confidence
 
-    # backPropagate function - returns a tuple "(nabla_b, nabla_w)" representing the gradient for the cost function C_x
-    # nabla_b and nabla_w are layer-by-layer lists of numpy arrays, similar to self.biases and self.weights
-    def backPropagate(self, x, y):
-        nabla_b = [numpy.zeros(b.shape) for b in self.biases]
-        nabla_w = [numpy.zeros(w.shape) for w in self.weights]
 
-        # feedForward
-        activation = x
-        activations = [x] # list to store all of the activations, layer by layer
-        zs = [] # list to store all of the z vectors, layer by layer
+def gradient_descent(gradient, start, learn_rate, n_iter):
+    vector = start
+    for _ in range(n_iter):
+        diff = -learn_rate * gradient(vector)
+        vector += diff
+    return vector
 
-        for b, w in zip(self.biases, self.weights):
-            z = numpy.dot(w, activation) + b
-            zs.append(z)
 
-            activation = sigmoidVector(z)
-            activations.append(activation)
+class Layer:
+    def __input__(alg_type, opts):
+        if alg_type == 'sigmoid':
+            this.function = sigmoid
+            this.derivative = sigmoid_derivative
+        elif alg_type == 'gradient_descent':
+            this.function = lambda x: gradient_descent()
 
-        # backward pass
-        delta = self.costDerivative(activations[-1], y) * sigmoidPrimeVector(zs[-1])
-        nabla_b[-1] = delta
-        nabla_w[-1] = numpy.dot(delta, activations[-2].transpose())
 
-        for l in xrange(2, self.numLayers):
-            z = zs[-l]
-            spv = sigmoidPrimeVector(z)
 
-            delta = numpy.dot(self.weights[-l + 1].transpose(), delta) * spv
 
-            nabla_b[-l] = delta
-            nabla_w[-l] = numpy.dot(delta, activations[-l - 1].transpose())
+class NeuralNetwork:
+    def __init__(
+        self,
+        layers=[8,8],
+        preproccessor=lambda x: process_value(x, 8),
+        synaptic_weights=None,
+        save_funct=None
+    ):
+        self.save_funct = save_funct
+        self.type = "NN"
+        self.layers = layers
+        self.preproccessor = preproccessor
+        if synaptic_weights == None:
+            # seeding for random number generation
+            random.seed(1)
 
-        return (nabla_b, nabla_w)
+            # converting weights to a 3 by 1 matrix with values from -1 to 1 and mean of 0
+            self.synaptic_weights = []
+            for i in range(len(layers)-1):
+                self.synaptic_weights.append(2 * random.random((layers[i], layers[i+1])) - 1)
+            print(self.synaptic_weights)
+        else:
+            self.synaptic_weights = [array(synaptic_weights)]
+    def __del__(self):
+        if self.save_funct:
+            self.save_funct()
+    def adjust(self, training_inputs, training_outputs):
+        # siphon the training data via  the neuron
+        output = self.think(training_inputs)
 
-    # evaluate function - return the number of test inputs for which the neural network outputs the correct result
-    def evaluate(self, testData):
-        testResults = [(numpy.argmax(self.feedForward(x)), y) for (x, y) in testData]
-        return sum(int(x == y) for (x, y) in testResults)
+        # computing error rate for back-propagation
+        error = training_outputs - output
 
-    # costDerivative function - return the vector of partial derivatives for the output activations
-    def costDerivative(self, outputActivations, y):
-        return (outputActivations - y)
+        # performing weight adjustments
+        for i in range(len(self.synaptic_weights)):
+            x = output
+            for _ in range(len(self.synaptic_weights) - i):
+                x = sigmoid_derivative(output)
+            adjustments = dot(training_inputs.T, error * x)
+    
+            self.synaptic_weights[i] += adjustments
+        return output
 
-    # save function - save the neural network to filename
-    def save(self, filename):
-        data = {
-            "sizes": self.sizes,
-            "weights": [w.tolist() for w in self.weights],
-            "biases": [b.tolist() for b in self.biases]
-        }
+    def train(self, training_inputs, training_outputs, training_iterations):
+        training_inputs = array(
+            [
+                fill(self.preproccessor(inp), self.layers[0])
+                for inp in training_inputs
+            ]
+        )
+        training_inputsT = training_inputs.T
+        training_outputs = array(
+            [
+                fill(self.preproccessor(out), self.layers[-1])
+                for out in training_outputs
+            ]
+        )
+        # training the model to make accurate predictions while adjusting weights continually
+        for iteration in range(training_iterations):
+            for i in range(len(self.synaptic_weights)):
+                # siphon the training data via  the neuron
+                output = self.think(training_inputs, 0, i)
+        
+                # computing error rate for back-propagation
+                error = training_outputs - output
+                for _ in range(len(self.synaptic_weights)-i-1):
 
-        with open(filename, "w") as handle:
-            json.dump(data, handle)
+                    # performing weight adjustments
+                    x = sigmoid_derivative(output)
 
-# load function - load a neural network from the file filename
-# returns a network instance
-def load(filename):
-    with open(filename, "r") as handle:
-        data = json.load(handle)
+                    adjustments = dot(training_inputsT, error * x)
+    
+                self.synaptic_weights[len(self.synaptic_weights)-i-1] += adjustments
 
-    network = NN(data["sizes"])
-    network.weights = [numpy.array(w) for w in data["weights"]]
-    network.biases = [numpy.array(b) for b in data["biases"]]
+    def think(self, inputs, start_layer=0, end_layer=-1):
+        # passing the inputs via the neuron to get output
+        weights = self.synaptic_weights[start_layer]
+        if type(inputs) != ndarray:
+            inputs = fill(
+                self.preproccessor(inputs), self.layers[0]
+            )
+            inputs = array(inputs)
+        x = inputs
+        for i in range(len(weights)):
+            x = sigmoid(dot(x, weights[i]))
+        output = x
+        print(output)
+        return output
 
-    return network
+    def setLayers(layers):
+        for i in range(len(layers) - 1):
+            if i >= len(self.layers):
+                self.synaptic_weights.append(2 * random.random((layers[i], layers[i + 1])) - 1)
+            else:
+                if inputs > self.input_length:
+                    for _ in range(inputs - self.input_length):
+                        for x in range(len(self.synaptic_weights)):
+                            self.synaptic_weights[l] = array(
+                                [[0] * layers[i + 1]] + self.synaptic_weights[i].tolist()
+                            )
+                elif inputs < self.input_length:
+                    self.synaptic_weights[i] = self.synaptic_weights[i][1:]
+                if outputs > self.max_output_length:
+                    for _ in range(inputs - self.max_output_length):
+                        for x in range(len(self.synaptic_weights[i])):
+                            self.synaptic_weights[i][x] = array(self.synaptic_weights[i][x].tolist() + [0])
+                elif outputs < self.max_output_length:
+                    for x in range(len(self.synaptic_weights[i])):
+                        self.synaptic_weights[i][x] = array(self.synaptic_weights[i].tolist()[:-1])
+
+        self.layers = layers
+
 
 
 if __name__ == "__main__":
-    x = NN((3, 3, 3, 3, 3, 3))
-    x.train()
-    print(x.feedForward([0, 1, 1]))
+    t = NeuralNetwork([2, 3, 2])
+    [
+        array([
+            [3],
+            [3]
+        ]),
+        array([
+            [2],
+            [2],
+            [2]
+        ])
+    ]
+    t.train(
+        [[0, 1], [1, 0], [1, 1], [0, 0]],
+        [[1, 1], [1, 1], [1, 1], [0, 0]],
+        50
+    )
+    print(t.think([1, 1]))
+    # x = NeuralNetwork([32, 40, 32])
+    # x.train(
+    #     [process_value("hi"), process_value("hey")],
+    #     [process_value("hey"), process_value("hi")],
+    #     20,
+    # )
+    # print(decode(x.think(process_value("hi"))))
