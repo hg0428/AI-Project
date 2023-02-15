@@ -5,27 +5,19 @@ from sty import fg, rs
 from os import listdir
 from os.path import isfile, join
 from json import load
+import torch
+import rnn
 
-
-# TODO: Publish as a lib.
-# TODO: Improve training proccess
-# TODO: reset AI with improved training & longer character length.
-# TODO: cannot decrease setInOut values, training breaks with increase.
-# Maybe try out a more complex nn
-# Add confidence and fix DLMA.
-
-# Let nn's see the previous nn's output.
 
 ai = None
-mil = 20  # max input length use 30 for ai2
+mil = 20  # max input length
 mol = 20  # max output length
-bpc = 8  # bits per character use 32 for ai2
-layers = 1
+bpc = 8  # bits per character
+layers = 1 # 1 is the only one that really works.
 
 models = [f for f in listdir("models") if isfile(join("models", f))]
 
-
-saveFile = "ai2"  # ai2 uses input/output length 30, and 32 bpc
+saveFile = ""
 
 
 def save():
@@ -47,10 +39,12 @@ while True:
             ai = pload(open(join("models", saveFile), "rb"))
             bpc = ai.bits_per_character
             mil = int(ai.input_length / bpc)
-            mol = int(ai.input_length / bpc)
+            mol = int(ai.output_length / bpc)
             layers = ai.layers
             t = ai.type
-            print(f'Loaded {t} "{saveFile}" {layers}l - {mil}:{mol}@{bpc} = {((mol*bpc)*(mil*bpc))*layers:,}')
+            print(
+                f'Loaded {t} "{saveFile}" {layers}l - {mil}:{mol}@{bpc} = {((mol*bpc)*(mil*bpc))*layers:,}'
+            )
             break
         except Exception as e:
             print(
@@ -100,9 +94,20 @@ def train(amt=100, file="basic"):
     if amt <= 0:
         return
     data = loadTrainingData(file)
-    print(f'Training with {amt} iterations on "{file}" dataset ({len(data[0])})...')
+    print(
+        f'Training with {amt} iterations on "{file}" dataset ({len(data[0])})...'
+    )
     try:
-        ai.train(*data, amt)
+        if ai.type == 'NN':
+            ai.train(*data, amt)
+        elif ai.type == 'TCM':
+            dataset = []
+            for example in data:
+                dataset.append({
+                    'prompt': example,
+                    'completion': data[example]
+                })
+            ai.train(dataset, amt)
         print("Training Complete")
     finally:
         save()
@@ -110,7 +115,7 @@ def train(amt=100, file="basic"):
 
 register(save)
 
-decode(ai.think([1, 0, 1, 0, 1]), bpc)
+#decode(ai.think([1, 0, 1, 0, 1]), bpc)
 # ai.train(
 #     [[1, 1, 1, 1]],
 #     [[0, 0, 0, 0]],
@@ -133,4 +138,6 @@ while True:
         train(amt, f)
     else:
         resp = decode(ai.think(inp), bpc)
-        print(f'{fg(255, 70, 70)}AI:{fg(255, 150, 150)} {resp[0]}\n{fg(255, 70, 70)}Confidence:{fg(255, 150, 150)} {resp[1]}%{rs.all}')
+        print(
+            f'{fg(255, 70, 70)}AI:{fg(255, 150, 150)} {resp[0]}\n{fg(255, 70, 70)}Confidence:{fg(255, 150, 150)} {resp[1]}%{rs.all}'
+        )
